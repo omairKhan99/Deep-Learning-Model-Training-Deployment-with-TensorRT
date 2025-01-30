@@ -31,3 +31,10 @@ class SimpleCNN(nn.Module): # I am just defining a simple CNN for object detecti
         x = self.relu(self.fc2(x))
         x = self.fc3(x)
         return x
+    
+transform = transforms.Compose([ # I am just defining a simple transform for the CIFAR10 dataset
+    transforms.Resize((32, 32)),
+    transforms.ToTensor(),
+])
+train_dataset = datasets.CIFAR10(root="./data", train=True, transform=transform, download=True)
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
