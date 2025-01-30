@@ -38,3 +38,23 @@ transform = transforms.Compose([ # I am just defining a simple transform for the
 ])
 train_dataset = datasets.CIFAR10(root="./data", train=True, transform=transform, download=True)
 train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+
+def train_model(): # I am just training the model and exporting it to ONNX
+    model = SimpleCNN()
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    
+    for epoch in range(10):
+        running_loss = 0.0
+        for images, labels in train_loader:
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
+        print(f"Epoch {epoch+1}, Loss: {running_loss/len(train_loader)}")
+    
+    torch.save(model.state_dict(), "model.pth")
+    torch.onnx.export(model, torch.randn(1, 3, 32, 32), "model.onnx")
+    print("Model training and ONNX export complete.")
