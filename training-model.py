@@ -58,3 +58,34 @@ def train_model(): # I am just training the model and exporting it to ONNX
     torch.save(model.state_dict(), "model.pth")
     torch.onnx.export(model, torch.randn(1, 3, 32, 32), "model.onnx")
     print("Model training and ONNX export complete.")
+
+def convert_to_tensorrt(): # I am just converting the ONNX model to TensorRT
+    TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
+    builder = trt.Builder(TRT_LOGGER)
+    network = builder.create_network(1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
+    config = builder.create_builder_config()
+    parser = trt.OnnxParser(network, TRT_LOGGER)
+    
+    with open("model.onnx", "rb") as f:
+        if not parser.parse(f.read()):
+            print("ERROR: Failed to parse ONNX model.")
+            return
+    
+    serialized_network = builder.build_serialized_network(network, config)
+    runtime = trt.Runtime(TRT_LOGGER)
+    engine = runtime.deserialize_cuda_engine(serialized_network)
+    
+    with open("model.trt", "wb") as f:
+        f.write(serialized_network)
+    print("TensorRT model conversion complete.")
+
+def run_onnx_inference(): # I am just running inference using ONNX Runtime
+    ort_session = ort.InferenceSession("model.onnx")
+    test_input = np.random.rand(1, 3, 32, 32).astype(np.float32)
+    outputs = ort_session.run(None, {ort_session.get_inputs()[0].name: test_input})
+    print("ONNX Runtime Inference Output:", outputs)
+
+if __name__ == "__main__":
+    train_model()
+    convert_to_tensorrt()
+    run_onnx_inference()
